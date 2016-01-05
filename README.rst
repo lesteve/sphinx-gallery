@@ -158,3 +158,5 @@ running the examples files. For this you need to extend your ``Makefile`` with::
 
 Remember that for in ``Makefile`` white space is significant and the indentation are tabs
 and not spaces
+
+.. include:: doc/changes.rst
