@@ -1,1 +1,1 @@
-doc/changes.rst
+.. include:: doc/changes.rst
