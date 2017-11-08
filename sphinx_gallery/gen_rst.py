@@ -271,7 +271,7 @@ def save_figures(image_path, fig_count, gallery_conf):
     """
     figure_list = []
     for scraper in gallery_conf['image_scrapers']:
-        if isinstance(scraper, str):
+        if isinstance(scraper, basestring):
             if scraper not in _scraper_dict:
                 raise ValueError('Unknown image scraper %r' % (scraper,))
             scraper = _scraper_dict[scraper]
