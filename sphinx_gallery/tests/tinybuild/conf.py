@@ -26,6 +26,8 @@ sphinx_gallery_conf = {
         },
     'examples_dirs': ['examples'],
     'gallery_dirs': ['auto_examples'],
+    # this should be removed in favor of image_scrapers eventually
+    'find_mayavi_figures': True,
     'backreferences_dir': 'gen_modules/backreferences',
     'within_section_order': FileNameSortKey,
     'expected_failing_examples': ['examples/plot_future_imports_broken.py'],

@@ -16,6 +16,9 @@ import shutil
 import zipfile
 import pytest
 
+import numpy as np
+from PIL import Image
+
 import sphinx_gallery.gen_rst as sg
 from sphinx_gallery import gen_gallery, downloads
 from sphinx_gallery.gen_gallery import generate_dir_rst
@@ -249,25 +252,69 @@ def test_save_figures(gallery_conf):
         raise pytest.skip('Mayavi not installed')
     mlab.options.offscreen = True
 
-    gallery_conf.update(find_mayavi_figures=True)
-
-    mlab.test_plot3d()
-    plt.plot(1, 1)
+    gallery_conf.update(image_scrapers=('matplotlib', 'mayavi'))
     fname_template = os.path.join(gallery_conf['gallery_dir'], 'image{0}.png')
-    image_rst, fig_num = sg.save_figures(fname_template, 0, gallery_conf)
-    assert fig_num == 2
-    assert '/image1.png' in image_rst
-    assert '/image2.png' in image_rst
 
-    mlab.test_plot3d()
-    plt.plot(1, 1)
-    image_rst, fig_num = sg.save_figures(fname_template, 2, gallery_conf)
-    assert fig_num == 2
-    assert '/image2.png' not in image_rst
-    assert '/image3.png' in image_rst
-    assert '/image4.png' in image_rst
+    try:
+        plt.axes([-0.1, -0.1, 1.2, 1.2])
+        plt.pcolor([[0]], cmap='Greens')
+        mlab.test_plot3d()
+        image_rst, fig_num = sg.save_figures(fname_template, 0, gallery_conf)
+        assert len(plt.get_fignums()) == 0
+        assert fig_num == 2
+        assert '/image0.png' not in image_rst
+        assert '/image1.png' in image_rst
+        assert '/image2.png' in image_rst
+        assert '/image3.png' not in image_rst
+        assert not os.path.isfile(fname_template.format(0))
+        assert os.path.isfile(fname_template.format(1))
+        assert os.path.isfile(fname_template.format(2))
+        assert not os.path.isfile(fname_template.format(0))
+        with Image.open(fname_template.format(1)) as img:
+            pixels = np.asarray(img.convert("RGB"))
+        assert (pixels == [247, 252, 245]).all()  # plt first
 
-    shutil.rmtree(gallery_conf['gallery_dir'])
+        # Test next-value handling, plus image_scrapers modification
+        gallery_conf.update(image_scrapers=('matplotlib',))
+        mlab.test_plot3d()
+        plt.axes([-0.1, -0.1, 1.2, 1.2])
+        plt.pcolor([[0]], cmap='Reds')
+        image_rst, fig_num = sg.save_figures(fname_template, 2, gallery_conf)
+        assert len(plt.get_fignums()) == 0
+        assert fig_num == 1
+        assert '/image1.png' not in image_rst
+        assert '/image2.png' not in image_rst
+        assert '/image3.png' in image_rst
+        assert '/image4.png' not in image_rst
+        assert not os.path.isfile(fname_template.format(0))
+        for ii in range(3):
+            assert os.path.isfile(fname_template.format(ii + 1))
+        assert not os.path.isfile(fname_template.format(4))
+        with Image.open(fname_template.format(3)) as img:
+            pixels = np.asarray(img.convert("RGB"))
+        assert (pixels == [255, 245, 240]).all()
+
+        # custom finders
+        gallery_conf.update(image_scrapers=[lambda x, y: 0])
+        image_rst, fig_num = sg.save_figures(fname_template, 0, gallery_conf)
+        assert fig_num == 0
+
+        # degenerate
+        gallery_conf.update(image_scrapers=['foo'])
+        with pytest.raises(ValueError) as excinfo:
+            sg.save_figures(fname_template, 0, gallery_conf)
+        assert 'Unknown image scraper' in str(excinfo)
+        gallery_conf.update(image_scrapers=[lambda x, y: 1])
+        with pytest.raises(RuntimeError) as excinfo:
+            sg.save_figures(fname_template, 10, gallery_conf)
+        assert 'did not produce expected image' in str(excinfo)
+        gallery_conf.update(image_scrapers=[lambda x, y: 'foo'])
+        with pytest.raises(RuntimeError) as excinfo:
+            sg.save_figures(fname_template, 0, gallery_conf)
+        assert 'invalid output' in str(excinfo)
+
+    finally:
+        shutil.rmtree(gallery_conf['gallery_dir'])
 
 
 def test_zip_notebooks(gallery_conf):

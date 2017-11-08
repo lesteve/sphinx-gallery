@@ -49,6 +49,7 @@ DEFAULT_GALLERY_CONF = {
     'expected_failing_examples': set(),
     'thumbnail_size': (400, 280),  # Default CSS does 0.4 scaling (160, 112)
     'min_reported_time': 0,
+    'image_scrapers': ('matplotlib',),
 }
 
 logger = sphinx_compatibility.getLogger('sphinx-gallery')
@@ -87,6 +88,13 @@ def parse_config(app):
         plot_gallery = bool(app.builder.config.plot_gallery)
 
     gallery_conf = copy.deepcopy(DEFAULT_GALLERY_CONF)
+    if app.config.sphinx_gallery_conf.get('find_mayavi_figures', False):
+        logger.warning(
+            "Deprecated image scraping variable `find_mayavi_figures`\n"
+            "detected, use `image_scrapers` instead as:\n\n"
+            "   image_scrapers=('matplotlib', 'mayavi')",
+            type=DeprecationWarning)
+        gallery_conf['image_scrapers'] += ('mayavi',)
     gallery_conf.update(app.config.sphinx_gallery_conf)
     gallery_conf.update(plot_gallery=plot_gallery)
     gallery_conf.update(
