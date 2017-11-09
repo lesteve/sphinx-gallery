@@ -465,6 +465,10 @@ and offset number), write out the proper PNG files, and return the number
 written. For example, a naive class to scrape any new PNG outputs in the
 current directory could do, e.g.::
 
+    import glob
+    import shutil
+
+
     class PNGScraper(object):
         def __init__(self):
             self.seen = set()
@@ -475,7 +479,7 @@ current directory could do, e.g.::
             for ii, png in enumerate(my_pngs):
                 if png not in seen:
                     seen |= set(png)
-                    os.copyfile(png, image_path.format(offset + ii))
+                    shutil.copyfile(png, image_path.format(offset + ii))
                     count += 1
             return count
 
