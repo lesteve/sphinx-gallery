@@ -208,7 +208,8 @@ def md5sum_is_current(src_file):
     return False
 
 
-def matplotlib_scraper(image_path, offset):
+# XXX: sources_dir should not be part of the scraper arguments
+def matplotlib_scraper(image_path, offset, sources_dir):
     """Scrape Matplotlib images."""
     count = 0
     for ii, fig_num in enumerate(plt.get_fignums()):
@@ -226,10 +227,12 @@ def matplotlib_scraper(image_path, offset):
         fig.savefig(current_fig, **kwargs)
         count += 1
     plt.close('all')
-    return count
+    return cell_figure_rst([image_path.format(offset + ii)
+                            for ii in range(count)], sources_dir), count
 
 
-def mayavi_scraper(image_path, offset):
+# XXX: sources_dir should not be part of the scraper arguments
+def mayavi_scraper(image_path, offset, sources_dir):
     """Scrape Mayavi images."""
     count = 0
     from mayavi import mlab
@@ -241,7 +244,8 @@ def mayavi_scraper(image_path, offset):
         scale_image(current_fig, current_fig, 850, 999)
         count += 1
     mlab.close(all=True)
-    return count
+    return cell_figure_rst([image_path.format(offset + ii)
+                            for ii in range(count)], sources_dir), count
 
 
 _scraper_dict = dict(
@@ -269,28 +273,31 @@ def save_figures(image_path, fig_count, gallery_conf):
     fig_num : int
         number of figures saved
     """
-    figure_list = []
+    figure_rst_list = []
     for scraper in gallery_conf['image_scrapers']:
         if isinstance(scraper, basestring):
             if scraper not in _scraper_dict:
                 raise ValueError('Unknown image scraper %r' % (scraper,))
             scraper = _scraper_dict[scraper]
         # The +1 here is because we start image numbering at 1
-        n_new = scraper(image_path, fig_count + 1)
-        if not isinstance(n_new, int) or n_new < 0:
-            raise RuntimeError('Scraper %s gave an invalid output: %s'
-                               % (scraper, n_new,))
-        for ii in range(n_new):
+        cell_figure_rst, nb_cell_figures = scraper(image_path, fig_count + 1,
+                                                   gallery_conf['src_dir'])
+        # TODO: need to do checks on cell_figure_rst and nb_cell_figures
+        # if not isinstance(figure_rst_list, list):
+        #     raise RuntimeError('Scraper %s gave an invalid output: %s'
+        #                        % (scraper, figure_rst_list))
+        for ii in range(nb_cell_figures):
             current_fig = image_path.format(fig_count + ii + 1)
             if not os.path.isfile(current_fig):
                 raise RuntimeError('Scraper %s did not produce expected image:'
                                    '\n%s' % (scraper, current_fig))
-            figure_list.append(current_fig)
-        fig_count += n_new
-    return figure_rst(figure_list, gallery_conf['src_dir'])
+        figure_rst_list.append(cell_figure_rst)
+        fig_count += nb_cell_figures
+
+    return '\n\n'.join(figure_rst_list), fig_count
 
 
-def figure_rst(figure_list, sources_dir):
+def cell_figure_rst(figure_paths, sources_dir):
     """Given a list of paths to figures generate the corresponding rst
 
     Depending on whether we have one or more figures, we use a
@@ -298,7 +305,7 @@ def figure_rst(figure_list, sources_dir):
 
     Parameters
     ----------
-    figure_list : list of str
+    figure_paths : list of str
         Strings are the figures' absolute paths
     sources_dir : str
         absolute path of Sphinx documentation sources
@@ -313,17 +320,18 @@ def figure_rst(figure_list, sources_dir):
 
     figure_paths = [os.path.relpath(figure_path, sources_dir)
                     .replace(os.sep, '/').lstrip('/')
-                    for figure_path in figure_list]
+                    for figure_path in figure_paths]
     images_rst = ""
-    if len(figure_paths) == 1:
-        figure_name = figure_paths[0]
-        images_rst = SINGLE_IMAGE % figure_name
-    elif len(figure_paths) > 1:
-        images_rst = HLIST_HEADER
-        for figure_name in figure_paths:
-            images_rst += HLIST_IMAGE_TEMPLATE % figure_name
+    # XXX: making my life simpler by always using multi-image template. Also
+    # that means that each scrapper will have figures on its own line which is
+    # actually a good thing nb_cell_figures = len(figure_paths) if
+    # nb_cell_figures == 1: figure_path = figure_paths[0] images_rst =
+    # SINGLE_IMAGE % figure_path elif nb_cell_figures > 1:
+    images_rst = HLIST_HEADER
+    for figure_name in figure_paths:
+        images_rst += HLIST_IMAGE_TEMPLATE % figure_name
 
-    return images_rst, len(figure_list)
+    return images_rst
 
 
 def scale_image(in_fname, out_fname, max_width, max_height):
