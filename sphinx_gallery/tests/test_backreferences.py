@@ -6,6 +6,7 @@ Testing the rst files generator
 """
 from __future__ import division, absolute_import, print_function
 import os
+import tempfile
 import sphinx_gallery.backreferences as sg
 
 
@@ -63,19 +64,7 @@ def test_backref_thumbnail_div():
 
 
 def test_identify_names():
-    code_str = """
-import os
-os
 
-os.path.join
-
-import sphinx_gallery.back_references as br
-br.identify_names
-
-from sphinx_gallery.back_references import identify_names
-identify_names
-"""
-    res = sg.identify_names(code_str)
     expected = {
         'os.path.join':
             {'name': 'join', 'module': 'os.path', 'module_short': 'os.path'},
@@ -88,5 +77,31 @@ identify_names
              'module': 'sphinx_gallery.back_references',
              'module_short': 'sphinx_gallery.back_references'}
     }
+
+    res = sg.identify_names('sphinx_gallery/tests/unicode.sample')
+    assert expected == res
+
+
+def test_identify_names2():
+    code_str = b"""
+# -*- coding: utf-8 -*-
+# \xc3\x9f
+from a.b import c
+import d as e
+print(c)
+e.HelloWorld().f.g
+"""
+    expected = {'c': {'name': 'c', 'module': 'a.b', 'module_short': 'a.b'},
+                'e.HelloWorld': {'name': 'HelloWorld', 'module': 'd', 'module_short': 'd'}}
+
+    import locale
+    print(locale.getlocale())
+
+    with tempfile.NamedTemporaryFile('wb', delete=False) as f:
+        f.write(code_str)
+    try:
+        res = sg.identify_names(f.name)
+    finally:
+        os.remove(f.name)
 
     assert expected == res
