@@ -11,5 +11,3 @@ pytest sphinx_gallery
 cd doc
 make html-noplot
 make html -j 2
-
-cd $OLDPWD
