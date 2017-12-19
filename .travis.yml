@@ -92,7 +92,8 @@ before_script:
 
 script:
     - python setup.py test
-    - pytest sphinx_gallery
+    - pip install pytest-timeout
+    - pytest sphinx_gallery -v --timeout=180
     - cd doc
     - make html-noplot
     - make html -j 2
