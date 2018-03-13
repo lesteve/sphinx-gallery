@@ -135,7 +135,8 @@ def test_extract_intro_and_title():
     intro, title = sg.extract_intro_and_title('<string>', 'Title\n-----')
     assert intro == title == 'Title'
 
-    # Title beginning with a space (gh-356)
+    # rst warnings: title beginning with a space (gh-356) and title overline
+    # too short
     intro, title = sg.extract_intro_and_title('filename',
                                               '^^^^^\n   Title  two  \n^^^^^')
     assert intro == title == 'Title  two'
@@ -150,11 +151,25 @@ def test_extract_intro_and_title():
     assert intro.endswith('...')
     assert intro_paragraph.replace('\n', ' ')[:95] == intro[:95]
 
+    # rst markup (not the sphinx-specific one e.g. :ref:) gets removed
+    docstring = (
+        '^^^^^\nExample using ``sys.argv``\n^^^^^\n\n'
+        '.. target_:\n\n'
+        'You should **really** see :ref:`description <link>` for more details')
+    intro, title = sg.extract_intro_and_title('filename', docstring)
+    assert title == 'Example using sys.argv'
+    assert intro == ('You should really see :ref:`description <link>` '
+                     'for more details')
+
     # Errors
-    with pytest.raises(ValueError, match='should have a header'):
-        sg.extract_intro_and_title('<string>', '')  # no title
-    with pytest.raises(ValueError, match='Could not find a title'):
-        sg.extract_intro_and_title('<string>', '-')  # no real title
+    filename = 'this_is_the_filename'
+    with pytest.raises(ValueError,
+                       match='Could not find a title.+{}'.format(filename)):
+        sg.extract_intro_and_title('this_is_the_filename', '')  # no title
+    with pytest.raises(ValueError,
+                       match='Could not find a title.+{}'.format(filename)):
+        sg.extract_intro_and_title('this_is_the_filename',
+                                   '-')  # no real title
 
 
 def test_md5sums():

@@ -26,6 +26,7 @@ import sys
 import traceback
 import codeop
 from distutils.version import LooseVersion
+import docutils
 
 from .utils import replace_py_ipynb
 
@@ -204,31 +205,37 @@ def codestr2rst(codestr, lang='python', lineno=None):
 
 def extract_intro_and_title(filename, docstring):
     """ Extract the first paragraph of module-level docstring. max:95 char"""
+    default_settings = docutils.frontend.OptionParser(
+        components=(docutils.parsers.rst.Parser,)).get_default_values()
+    document = docutils.utils.new_document('document', default_settings)
+    parser = docutils.parsers.rst.Parser()
 
-    # lstrip is just in case docstring has a '\n\n' at the beginning
-    paragraphs = docstring.lstrip().split('\n\n')
-    # remove comments and other syntax like `.. _link:`
-    paragraphs = [p for p in paragraphs
-                  if not p.startswith('.. ') and len(p) > 0]
-    if len(paragraphs) == 0:
-        raise ValueError(
-            "Example docstring should have a header for the example title. "
-            "Please check the example file:\n {}\n".format(filename))
-    # Title is the first paragraph with any ReSTructuredText title chars
-    # removed, i.e. lines that consist of (all the same) 7-bit non-ASCII chars.
-    # This conditional is not perfect but should hopefully be good enough.
-    title_paragraph = paragraphs[0]
-    match = re.search(r'([\w ]+)', title_paragraph)
+    parser.parse(docstring, document)
+    sections = document.traverse(docutils.nodes.section)
 
-    if match is None:
+    # TODO I get system_message nodes with warnings when the rst is not perfect
+    # is there a way to completely ignore this messages? or just warn and
+    # remove them from the document?
+
+    # tree = docutils.core.publish_doctree(docstring)
+    # sections = tree.traverse(docutils.nodes.section)
+
+    if len(sections) == 0:
         raise ValueError(
-            'Could not find a title in first paragraph:\n{}'.format(
-                         title_paragraph))
-    title = match.group(1).strip()
-    # Use the title if no other paragraphs are provided
-    intro_paragraph = title if len(paragraphs) < 2 else paragraphs[1]
-    # Concatenate all lines of the first paragraph and truncate at 95 chars
-    intro = re.sub('\n', ' ', intro_paragraph)
+            "Could not find a title in file {}\n. "
+            "Its docstring was:\n{}".format(filename, docstring))
+
+    section = sections[0]
+    title = section[0].astext()
+    try:
+        # Only keep paragraphs in order to get rid of possible system_message
+        # nodes with warnings
+        paragraphs = [each for each in section[1:]
+                      if isinstance(each, docutils.nodes.paragraph)]
+        intro = paragraphs[0].astext().replace('\n', ' ')
+    except IndexError:
+        intro = title
+
     if len(intro) > 95:
         intro = intro[:95] + '...'
 
