@@ -452,13 +452,13 @@ def generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs):
         'generating gallery for %s... ' % build_target_dir,
         length=len(sorted_listdir))
     for fname in iterator:
-        intro, time_elapsed = generate_file_rst(
+        title, intro, time_elapsed = generate_file_rst(
             fname,
             target_dir,
             src_dir,
             gallery_conf)
         computation_times.append((time_elapsed, fname))
-        this_entry = _thumbnail_div(build_target_dir, fname, intro) + """
+        this_entry = _thumbnail_div(build_target_dir, fname, title, intro) + """
 
 .. toctree::
    :hidden:
@@ -468,7 +468,7 @@ def generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs):
 
         if gallery_conf['backreferences_dir']:
             write_backreferences(seen_backrefs, gallery_conf,
-                                 target_dir, fname, intro)
+                                 target_dir, fname, title, intro)
 
     for entry_text in entries_text:
         fhindex += entry_text
@@ -600,7 +600,9 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
 
     Returns
     -------
-    intro: str
+    title : str
+        The title of the example
+    intro : str
         The introduction of the example
     time_elapsed : float
         seconds required to run the script
@@ -613,7 +615,7 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
     intro, title = extract_intro_and_title(fname, script_blocks[0][1])
 
     if md5sum_is_current(example_file):
-        return intro, 0
+        return title, intro, 0
 
     image_dir = os.path.join(target_dir, 'images')
     if not os.path.exists(image_dir):
@@ -728,4 +730,4 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
     if block_vars['execute_script']:
         logger.debug("%s ran in : %.2g seconds", src_file, time_elapsed)
 
-    return intro, time_elapsed
+    return title, intro, time_elapsed

@@ -12,7 +12,8 @@ import sphinx_gallery.backreferences as sg
 def test_thumbnail_div():
     """Test if the thumbnail div generates the correct string"""
 
-    html_div = sg._thumbnail_div('fake_dir', 'test_file.py', '<"test">')
+    html_div = sg._thumbnail_div('fake_dir', 'test_file.py',
+                                 'title', '<"test">')
 
     reference = r"""
 .. raw:: html
@@ -23,7 +24,7 @@ def test_thumbnail_div():
 
     .. figure:: /fake_dir/images/thumb/sphx_glr_test_file_thumb.png
 
-        :ref:`sphx_glr_fake_dir_test_file.py`
+        :ref:`title <sphx_glr_fake_dir_test_file.py>`
 
 .. raw:: html
 
@@ -36,7 +37,9 @@ def test_thumbnail_div():
 def test_backref_thumbnail_div():
     """Test if the thumbnail div generates the correct string"""
 
-    html_div = sg._thumbnail_div('fake_dir', 'test_file.py', 'test formating',
+    html_div = sg._thumbnail_div('fake_dir', 'test_file.py',
+                                 'this is the title',
+                                 'test formating',
                                  is_backref=True)
 
     reference = """
@@ -48,7 +51,7 @@ def test_backref_thumbnail_div():
 
     .. figure:: /fake_dir/images/thumb/sphx_glr_test_file_thumb.png
 
-        :ref:`sphx_glr_fake_dir_test_file.py`
+        :ref:`this is the title <sphx_glr_fake_dir_test_file.py>`
 
 .. raw:: html
 
