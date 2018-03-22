@@ -208,7 +208,9 @@ def extract_intro_and_title(filename, docstring):
     default_settings = docutils.frontend.OptionParser(
         components=(docutils.parsers.rst.Parser,)).get_default_values()
     document = docutils.utils.new_document('document', default_settings)
-    parser = docutils.parsers.rst.Parser()
+    from sphinx.parsers import RSTParser
+    parser = RSTParser()
+    # parser = docutils.parsers.rst.Parser()
 
     parser.parse(docstring, document)
     sections = document.traverse(docutils.nodes.section)
