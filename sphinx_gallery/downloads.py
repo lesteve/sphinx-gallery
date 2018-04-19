@@ -21,11 +21,11 @@ CODE_DOWNLOAD = """
 {2}
 \n  .. container:: sphx-glr-download
 
-     :download:`Download Python source code: {0} <{0}>`\n
+     :download:`Python file <{0}>`\n
 
 \n  .. container:: sphx-glr-download
 
-     :download:`Download Jupyter notebook: {1} <{1}>`\n"""
+     :download:`Jupyter notebook <{1}>`\n"""
 
 CODE_ZIP_DOWNLOAD = """
 \n.. only :: html

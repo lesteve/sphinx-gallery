@@ -625,7 +625,17 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
 
     ref_fname = os.path.relpath(example_file, gallery_conf['src_dir'])
     ref_fname = ref_fname.replace(os.path.sep, '_')
-    example_rst = """\n\n.. _sphx_glr_{0}:\n\n""".format(ref_fname)
+
+    # Generate a binder URL if specified
+    binder_badge_rst = ''
+    if len(binder_conf) > 0:
+        binder_badge_rst += gen_binder_rst(fname, binder_conf)
+
+    example_rst = CODE_DOWNLOAD.format(fname,
+                                       replace_py_ipynb(fname),
+                                       binder_badge_rst)
+
+    example_rst += """\n\n.. _sphx_glr_{0}:\n\n""".format(ref_fname)
 
     filename_pattern = gallery_conf.get('filename_pattern')
     execute_script = re.search(filename_pattern, src_file) and gallery_conf[
@@ -706,14 +716,6 @@ def generate_file_rst(fname, target_dir, src_dir, gallery_conf):
             example_rst += ("**Total running time of the script:**"
                             " ({0: .0f} minutes {1: .3f} seconds)\n\n".format(
                                 time_m, time_s))
-        # Generate a binder URL if specified
-        binder_badge_rst = ''
-        if len(binder_conf) > 0:
-            binder_badge_rst += gen_binder_rst(fname, binder_conf)
-
-        example_rst += CODE_DOWNLOAD.format(fname,
-                                            replace_py_ipynb(fname),
-                                            binder_badge_rst)
         example_rst += SPHX_GLR_SIG
         f.write(example_rst)
 
